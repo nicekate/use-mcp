@@ -60,13 +60,11 @@ export function McpServers({ onToolsUpdate }: { onToolsUpdate?: (tools: Tool[]) 
     retry: () => {},
     disconnect: () => {},
     authenticate: () => Promise.resolve(undefined),
-    callTool: (_name: string, _args?: Record<string, unknown>) =>
-      Promise.resolve(undefined),
+    callTool: (_name: string, _args?: Record<string, unknown>) => Promise.resolve(undefined),
     listResources: () => Promise.resolve(),
     readResource: (_uri: string) => Promise.resolve({ contents: [] }),
     listPrompts: () => Promise.resolve(),
-    getPrompt: (_name: string, _args?: Record<string, string>) =>
-      Promise.resolve({ messages: [] }),
+    getPrompt: (_name: string, _args?: Record<string, string>) => Promise.resolve({ messages: [] }),
     clearStorage: () => {},
   })
   const [toolForms, setToolForms] = useState<Record<string, Record<string, any>>>({})
@@ -118,13 +116,11 @@ export function McpServers({ onToolsUpdate }: { onToolsUpdate?: (tools: Tool[]) 
       retry: () => {},
       disconnect: () => {},
       authenticate: () => Promise.resolve(undefined),
-      callTool: (_name: string, _args?: Record<string, unknown>) =>
-        Promise.resolve(undefined),
+      callTool: (_name: string, _args?: Record<string, unknown>) => Promise.resolve(undefined),
       listResources: () => Promise.resolve(),
       readResource: (_uri: string) => Promise.resolve({ contents: [] }),
       listPrompts: () => Promise.resolve(),
-      getPrompt: (_name: string, _args?: Record<string, string>) =>
-        Promise.resolve({ messages: [] }),
+      getPrompt: (_name: string, _args?: Record<string, string>) => Promise.resolve({ messages: [] }),
       clearStorage: () => {},
     })
   }
@@ -495,10 +491,8 @@ export function McpServers({ onToolsUpdate }: { onToolsUpdate?: (tools: Tool[]) 
 
         {/* Available Resources section */}
         <div>
-          <h3 className="font-medium text-sm mb-3">
-            Available Resources ({resources.length + resourceTemplates.length})
-          </h3>
-          
+          <h3 className="font-medium text-sm mb-3">Available Resources ({resources.length + resourceTemplates.length})</h3>
+
           {resources.length === 0 && resourceTemplates.length === 0 ? (
             <div className="border border-gray-200 rounded p-4 bg-gray-50 text-center text-gray-500 text-sm">
               No resources available. Connect to an MCP server to see available resources.
@@ -509,13 +503,13 @@ export function McpServers({ onToolsUpdate }: { onToolsUpdate?: (tools: Tool[]) 
               {resources.map((resource: Resource, index: number) => {
                 const isExpanded = expandedResources[resource.uri] || false
                 const contents = resourceContents[resource.uri]
-                
+
                 return (
                   <div key={`resource-${index}`} className="bg-white rounded border border-gray-100 shadow-sm">
                     <div className="p-3">
                       <div className="flex items-start gap-2">
                         <button
-                          onClick={() => setExpandedResources(prev => ({ ...prev, [resource.uri]: !isExpanded }))}
+                          onClick={() => setExpandedResources((prev) => ({ ...prev, [resource.uri]: !isExpanded }))}
                           className="text-gray-500 hover:text-gray-700 mt-0.5"
                         >
                           {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
@@ -525,32 +519,28 @@ export function McpServers({ onToolsUpdate }: { onToolsUpdate?: (tools: Tool[]) 
                             <FileText size={14} className="text-gray-400" />
                             <h4 className="font-medium text-sm">{resource.name}</h4>
                           </div>
-                          {resource.description && (
-                            <p className="text-xs text-gray-500 mt-1">{resource.description}</p>
-                          )}
+                          {resource.description && <p className="text-xs text-gray-500 mt-1">{resource.description}</p>}
                           <p className="text-xs text-gray-400 mt-1 font-mono">{resource.uri}</p>
-                          {resource.mimeType && (
-                            <span className="text-xs text-gray-400">({resource.mimeType})</span>
-                          )}
+                          {resource.mimeType && <span className="text-xs text-gray-400">({resource.mimeType})</span>}
                         </div>
                       </div>
-                      
+
                       {isExpanded && (
                         <div className="mt-3 space-y-2">
                           <button
                             onClick={async () => {
                               try {
                                 const result = await readResource(resource.uri)
-                                setResourceContents(prev => ({ ...prev, [resource.uri]: result }))
+                                setResourceContents((prev) => ({ ...prev, [resource.uri]: result }))
                               } catch (error: any) {
-                                setResourceContents(prev => ({ ...prev, [resource.uri]: { error: error.message } }))
+                                setResourceContents((prev) => ({ ...prev, [resource.uri]: { error: error.message } }))
                               }
                             }}
                             className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-medium"
                           >
                             Read Resource
                           </button>
-                          
+
                           {contents && (
                             <div className="mt-2">
                               {contents.error ? (
@@ -579,7 +569,7 @@ export function McpServers({ onToolsUpdate }: { onToolsUpdate?: (tools: Tool[]) 
                   </div>
                 )
               })}
-              
+
               {/* Resource Templates */}
               {resourceTemplates.map((template: ResourceTemplate, index: number) => (
                 <div key={`template-${index}`} className="bg-white rounded border border-gray-100 shadow-sm">
@@ -589,13 +579,9 @@ export function McpServers({ onToolsUpdate }: { onToolsUpdate?: (tools: Tool[]) 
                       <h4 className="font-medium text-sm">{template.name}</h4>
                       <span className="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded">Template</span>
                     </div>
-                    {template.description && (
-                      <p className="text-xs text-gray-500 mt-1">{template.description}</p>
-                    )}
+                    {template.description && <p className="text-xs text-gray-500 mt-1">{template.description}</p>}
                     <p className="text-xs text-gray-400 mt-1 font-mono">{template.uriTemplate}</p>
-                    {template.mimeType && (
-                      <span className="text-xs text-gray-400">({template.mimeType})</span>
-                    )}
+                    {template.mimeType && <span className="text-xs text-gray-400">({template.mimeType})</span>}
                   </div>
                 </div>
               ))}
@@ -605,10 +591,8 @@ export function McpServers({ onToolsUpdate }: { onToolsUpdate?: (tools: Tool[]) 
 
         {/* Available Prompts section */}
         <div>
-          <h3 className="font-medium text-sm mb-3">
-            Available Prompts ({prompts.length})
-          </h3>
-          
+          <h3 className="font-medium text-sm mb-3">Available Prompts ({prompts.length})</h3>
+
           {prompts.length === 0 ? (
             <div className="border border-gray-200 rounded p-4 bg-gray-50 text-center text-gray-500 text-sm">
               No prompts available. Connect to an MCP server to see available prompts.
@@ -619,13 +603,13 @@ export function McpServers({ onToolsUpdate }: { onToolsUpdate?: (tools: Tool[]) 
                 const isExpanded = expandedPrompts[prompt.name] || false
                 const result = promptResults[prompt.name]
                 const args = promptArgs[prompt.name] || {}
-                
+
                 return (
                   <div key={index} className="bg-white rounded border border-gray-100 shadow-sm">
                     <div className="p-3">
                       <div className="flex items-start gap-2">
                         <button
-                          onClick={() => setExpandedPrompts(prev => ({ ...prev, [prompt.name]: !isExpanded }))}
+                          onClick={() => setExpandedPrompts((prev) => ({ ...prev, [prompt.name]: !isExpanded }))}
                           className="text-gray-500 hover:text-gray-700 mt-0.5"
                         >
                           {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
@@ -635,12 +619,10 @@ export function McpServers({ onToolsUpdate }: { onToolsUpdate?: (tools: Tool[]) 
                             <MessageSquare size={14} className="text-purple-400" />
                             <h4 className="font-medium text-sm">{prompt.name}</h4>
                           </div>
-                          {prompt.description && (
-                            <p className="text-xs text-gray-500 mt-1">{prompt.description}</p>
-                          )}
+                          {prompt.description && <p className="text-xs text-gray-500 mt-1">{prompt.description}</p>}
                         </div>
                       </div>
-                      
+
                       {isExpanded && (
                         <div className="mt-3 space-y-2">
                           {/* Prompt Arguments */}
@@ -652,42 +634,42 @@ export function McpServers({ onToolsUpdate }: { onToolsUpdate?: (tools: Tool[]) 
                                   <label className="text-xs text-gray-600">
                                     {arg.name}
                                     {arg.required && <span className="text-red-500 ml-1">*</span>}
-                                    {arg.description && (
-                                      <span className="text-gray-400 ml-1">({arg.description})</span>
-                                    )}
+                                    {arg.description && <span className="text-gray-400 ml-1">({arg.description})</span>}
                                   </label>
                                   <input
                                     type="text"
                                     className="w-full p-2 border border-gray-200 rounded text-sm"
                                     value={args[arg.name] || ''}
-                                    onChange={(e) => setPromptArgs(prev => ({
-                                      ...prev,
-                                      [prompt.name]: {
-                                        ...prev[prompt.name],
-                                        [arg.name]: e.target.value
-                                      }
-                                    }))}
+                                    onChange={(e) =>
+                                      setPromptArgs((prev) => ({
+                                        ...prev,
+                                        [prompt.name]: {
+                                          ...prev[prompt.name],
+                                          [arg.name]: e.target.value,
+                                        },
+                                      }))
+                                    }
                                     placeholder={arg.description || `Enter ${arg.name}`}
                                   />
                                 </div>
                               ))}
                             </div>
                           )}
-                          
+
                           <button
                             onClick={async () => {
                               try {
                                 const result = await getPrompt(prompt.name, args)
-                                setPromptResults(prev => ({ ...prev, [prompt.name]: result }))
+                                setPromptResults((prev) => ({ ...prev, [prompt.name]: result }))
                               } catch (error: any) {
-                                setPromptResults(prev => ({ ...prev, [prompt.name]: { error: error.message } }))
+                                setPromptResults((prev) => ({ ...prev, [prompt.name]: { error: error.message } }))
                               }
                             }}
                             className="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded text-xs font-medium"
                           >
                             Get Prompt
                           </button>
-                          
+
                           {result && (
                             <div className="mt-2">
                               {result.error ? (
@@ -699,9 +681,7 @@ export function McpServers({ onToolsUpdate }: { onToolsUpdate?: (tools: Tool[]) 
                                   <h5 className="text-xs font-medium text-gray-700">Messages:</h5>
                                   {result.messages?.map((message: any, idx: number) => (
                                     <div key={idx} className="border border-gray-200 rounded p-2">
-                                      <div className="text-xs font-medium text-gray-700 mb-1">
-                                        {message.role}:
-                                      </div>
+                                      <div className="text-xs font-medium text-gray-700 mb-1">{message.role}:</div>
                                       <pre className="text-xs font-mono bg-gray-50 p-2 rounded overflow-x-auto">
                                         {message.content.text || JSON.stringify(message.content, null, 2)}
                                       </pre>
