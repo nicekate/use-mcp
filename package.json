@@ -29,7 +29,8 @@
     "deploy:site": "npx wrangler deploy"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.11.0"
+    "@modelcontextprotocol/sdk": "^1.11.0",
+    "strict-url-sanitise": "^0.0.1"
   },
   "devDependencies": {
     "@axodotdev/oranda": "^0.6.5",

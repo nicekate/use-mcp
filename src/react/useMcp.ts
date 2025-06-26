@@ -6,6 +6,7 @@ import { SSEClientTransport, SSEClientTransportOptions } from '@modelcontextprot
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js' // Added
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { auth, UnauthorizedError, OAuthClientProvider } from '@modelcontextprotocol/sdk/client/auth.js'
+import { sanitizeUrl } from 'strict-url-sanitise'
 import { BrowserOAuthClientProvider } from '../auth/browser-provider.js' // Adjust path
 import { assert } from '../utils/assert.js' // Adjust path
 import type { UseMcpOptions, UseMcpResult } from './types.js' // Adjust path
@@ -23,7 +24,9 @@ export function useMcp(options: UseMcpOptions): UseMcpResult {
     url,
     clientName,
     clientUri,
-    callbackUrl = typeof window !== 'undefined' ? new URL('/oauth/callback', window.location.origin).toString() : '/oauth/callback',
+    callbackUrl = typeof window !== 'undefined'
+      ? sanitizeUrl(new URL('/oauth/callback', window.location.origin).toString())
+      : '/oauth/callback',
     storageKeyPrefix = 'mcp:auth',
     clientConfig = {},
     customHeaders = {},
@@ -189,7 +192,9 @@ export function useMcp(options: UseMcpOptions): UseMcpResult {
           authProvider: authProviderRef.current,
           requestInit: { headers: customHeaders },
         }
-        const targetUrl = new URL(url)
+        // Sanitize the URL to prevent XSS attacks from malicious server URLs
+        const sanitizedUrl = sanitizeUrl(url)
+        const targetUrl = new URL(sanitizedUrl)
 
         if (transportType === 'http') {
           transportInstance = new StreamableHTTPClientTransport(targetUrl, commonOptions)
