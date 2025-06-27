@@ -359,36 +359,26 @@ export function useMcp(options: UseMcpOptions): UseMcpResult {
           } catch (sdkAuthError) {
             if (!isMountedRef.current) return 'failed'
             if (authTimeoutRef.current) clearTimeout(authTimeoutRef.current)
-            addLog('error', 'Auth flow failed:', sdkAuthError)
-            // Auth failed, but still allow fallback to SSE
-            if (transportType === 'http') {
-              return 'fallback' // Try SSE even after auth failure
-            } else {
-              failConnection(
-                `Failed to initiate authentication: ${sdkAuthError instanceof Error ? sdkAuthError.message : String(sdkAuthError)}`,
-                sdkAuthError instanceof Error ? sdkAuthError : undefined,
-              )
-              return 'failed' // Auth initiation failed for SSE
-            }
+            // Use stable failConnection
+            failConnection(
+              `Failed to initiate authentication: ${sdkAuthError instanceof Error ? sdkAuthError.message : String(sdkAuthError)}`,
+              sdkAuthError instanceof Error ? sdkAuthError : undefined,
+            )
+            return 'failed' // Auth initiation failed
           }
         }
 
         // Handle other connection errors
-        // Don't call failConnection here for HTTP transport - let orchestration handle it
-        // so that SSE fallback can still be attempted
-        if (transportType === 'http') {
-          addLog('warn', `HTTP transport failed: ${errorMessage}.`)
-          return 'fallback'
-        } else {
-          // For SSE transport, we can fail immediately since there's no further fallback
-          failConnection(`Failed to connect via ${transportType.toUpperCase()}: ${errorMessage}`, errorInstance)
-          return 'failed'
-        }
+        // Use stable failConnection
+        failConnection(`Failed to connect via ${transportType.toUpperCase()}: ${errorMessage}`, errorInstance)
+        return 'fallback' // If our logic above is wrong, we'd prevent HTTPs servers from ever working. So always fall back as a last resort.
       }
     } // End of tryConnectWithTransport helper
 
     // --- Orchestrate Connection Attempts ---
     let finalStatus: 'success' | 'auth_redirect' | 'failed' | 'fallback' = 'failed' // Default to failed
+
+    console.log({transportType})
 
     if (transportType === 'sse') {
       // SSE only - skip HTTP entirely
@@ -402,20 +392,13 @@ export function useMcp(options: UseMcpOptions): UseMcpResult {
       // Auto mode - try HTTP first, fallback to SSE
       addLog('debug', 'Using auto transport mode (HTTP with SSE fallback)')
       const httpResult = await tryConnectWithTransport('http')
-
-      // Try SSE only if HTTP requested fallback and we haven't redirected
-      if (httpResult === 'fallback' && isMountedRef.current && stateRef.current !== 'authenticating') {
+      // 2. Try SSE only if HTTP requested fallback and we haven't failed/redirected
+      if (httpResult === 'fallback' && isMountedRef.current && stateRef.current !== 'failed' && stateRef.current !== 'authenticating') {
         const sseResult = await tryConnectWithTransport('sse')
         finalStatus = sseResult // Use SSE result as final status
       } else {
         finalStatus = httpResult // Use HTTP result if no fallback was needed/possible
       }
-    }
-
-    // If we still have 'fallback' status, convert to 'failed' since no more transports to try
-    if (finalStatus === 'fallback') {
-      finalStatus = 'failed'
-      failConnection('All transport methods failed')
     }
 
     // --- Finalize Connection State ---
