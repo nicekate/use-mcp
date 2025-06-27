@@ -26,6 +26,8 @@ export type UseMcpOptions = {
   autoReconnect?: boolean | number
   /** Popup window features string (dimensions and behavior) for OAuth */
   popupFeatures?: string
+  /** Transport type preference: 'auto' (HTTP with SSE fallback), 'http' (HTTP only), 'sse' (SSE only) */
+  transportType?: 'auto' | 'http' | 'sse'
 }
 
 export type UseMcpResult = {

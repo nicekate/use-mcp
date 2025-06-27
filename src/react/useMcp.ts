@@ -33,6 +33,7 @@ export function useMcp(options: UseMcpOptions): UseMcpResult {
     debug = false,
     autoRetry = false,
     autoReconnect = DEFAULT_RECONNECT_DELAY,
+    transportType = 'auto',
   } = options
 
   const [state, setState] = useState<UseMcpResult['state']>('discovering')
@@ -190,20 +191,36 @@ export function useMcp(options: UseMcpOptions): UseMcpResult {
 
         const commonOptions: SSEClientTransportOptions = {
           authProvider: authProviderRef.current,
-          requestInit: { headers: customHeaders },
+          requestInit: {
+            headers: {
+              Accept: 'application/json, text/event-stream',
+              ...customHeaders,
+            },
+          },
         }
         // Sanitize the URL to prevent XSS attacks from malicious server URLs
         const sanitizedUrl = sanitizeUrl(url)
         const targetUrl = new URL(sanitizedUrl)
 
+        addLog('debug', `Creating ${transportType.toUpperCase()} transport for URL: ${targetUrl.toString()}`)
+        addLog('debug', `Transport options:`, {
+          authProvider: !!authProviderRef.current,
+          headers: customHeaders,
+          url: targetUrl.toString(),
+        })
+
         if (transportType === 'http') {
+          addLog('debug', 'Creating StreamableHTTPClientTransport...')
           transportInstance = new StreamableHTTPClientTransport(targetUrl, commonOptions)
+          addLog('debug', 'StreamableHTTPClientTransport created successfully')
         } else {
           // sse
+          addLog('debug', 'Creating SSEClientTransport...')
           transportInstance = new SSEClientTransport(targetUrl, commonOptions)
+          addLog('debug', 'SSEClientTransport created successfully')
         }
         transportRef.current = transportInstance // Assign to ref immediately
-        addLog('debug', `${transportType.toUpperCase()} transport created.`)
+        addLog('debug', `${transportType.toUpperCase()} transport created and assigned to ref.`)
       } catch (err) {
         // Use stable failConnection
         failConnection(
@@ -222,6 +239,13 @@ export function useMcp(options: UseMcpOptions): UseMcpResult {
       }
       transportInstance.onerror = (err: Error) => {
         // Transport errors usually mean connection is lost/failed definitively for this transport
+        addLog('warn', `Transport error event (${transportType.toUpperCase()}):`, err)
+        addLog('debug', `Error details:`, {
+          message: err.message,
+          stack: err.stack,
+          name: err.name,
+          cause: err.cause,
+        })
         // Use stable failConnection
         failConnection(`Transport error (${transportType.toUpperCase()}): ${err.message}`, err)
         // Should we return 'failed' here? failConnection sets state, maybe that's enough.
@@ -252,6 +276,9 @@ export function useMcp(options: UseMcpOptions): UseMcpResult {
       // 3. Attempt client.connect()
       try {
         addLog('info', `Connecting client via ${transportType.toUpperCase()}...`)
+        addLog('debug', `About to call client.connect() with transport instance`)
+        addLog('debug', `Transport instance type: ${transportInstance.constructor.name}`)
+
         await clientRef.current!.connect(transportInstance)
 
         // --- Success Path ---
@@ -275,6 +302,12 @@ export function useMcp(options: UseMcpOptions): UseMcpResult {
       } catch (connectErr) {
         // --- Error Handling Path ---
         addLog('debug', `Client connect error via ${transportType.toUpperCase()}:`, connectErr)
+        addLog('debug', `Connect error details:`, {
+          message: connectErr instanceof Error ? connectErr.message : String(connectErr),
+          stack: connectErr instanceof Error ? connectErr.stack : 'N/A',
+          name: connectErr instanceof Error ? connectErr.name : 'Unknown',
+          cause: connectErr instanceof Error ? connectErr.cause : undefined,
+        })
         const errorInstance = connectErr instanceof Error ? connectErr : new Error(String(connectErr))
 
         // Check for 404/405 specifically for HTTP transport
@@ -287,7 +320,7 @@ export function useMcp(options: UseMcpOptions): UseMcpResult {
           errorMessage === 'Load failed' /* Safari */
 
         if (transportType === 'http' && (is404 || is405 || isLikelyCors)) {
-          addLog('warn', `HTTP transport failed (${isLikelyCors ? 'CORS' : is404 ? '404' : '405'}). Will attempt fallback to SSE.`)
+          addLog('warn', `HTTP transport failed (${isLikelyCors ? 'CORS' : is404 ? '404' : '405'}).`)
           return 'fallback' // Signal that fallback should be attempted
         }
 
@@ -344,7 +377,7 @@ export function useMcp(options: UseMcpOptions): UseMcpResult {
         // Don't call failConnection here for HTTP transport - let orchestration handle it
         // so that SSE fallback can still be attempted
         if (transportType === 'http') {
-          addLog('warn', `HTTP transport failed: ${errorMessage}. Will attempt fallback to SSE.`)
+          addLog('warn', `HTTP transport failed: ${errorMessage}.`)
           return 'fallback'
         } else {
           // For SSE transport, we can fail immediately since there's no further fallback
@@ -357,15 +390,26 @@ export function useMcp(options: UseMcpOptions): UseMcpResult {
     // --- Orchestrate Connection Attempts ---
     let finalStatus: 'success' | 'auth_redirect' | 'failed' | 'fallback' = 'failed' // Default to failed
 
-    // 1. Try HTTP
-    const httpResult = await tryConnectWithTransport('http')
-
-    // 2. Try SSE only if HTTP requested fallback and we haven't redirected
-    if (httpResult === 'fallback' && isMountedRef.current && stateRef.current !== 'authenticating') {
-      const sseResult = await tryConnectWithTransport('sse')
-      finalStatus = sseResult // Use SSE result as final status
+    if (transportType === 'sse') {
+      // SSE only - skip HTTP entirely
+      addLog('debug', 'Using SSE-only transport mode')
+      finalStatus = await tryConnectWithTransport('sse')
+    } else if (transportType === 'http') {
+      // HTTP only - no fallback
+      addLog('debug', 'Using HTTP-only transport mode')
+      finalStatus = await tryConnectWithTransport('http')
     } else {
-      finalStatus = httpResult // Use HTTP result if no fallback was needed/possible
+      // Auto mode - try HTTP first, fallback to SSE
+      addLog('debug', 'Using auto transport mode (HTTP with SSE fallback)')
+      const httpResult = await tryConnectWithTransport('http')
+
+      // Try SSE only if HTTP requested fallback and we haven't redirected
+      if (httpResult === 'fallback' && isMountedRef.current && stateRef.current !== 'authenticating') {
+        const sseResult = await tryConnectWithTransport('sse')
+        finalStatus = sseResult // Use SSE result as final status
+      } else {
+        finalStatus = httpResult // Use HTTP result if no fallback was needed/possible
+      }
     }
 
     // If we still have 'fallback' status, convert to 'failed' since no more transports to try
