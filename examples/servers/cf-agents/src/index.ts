@@ -1,6 +1,8 @@
 import { McpAgent } from 'agents/mcp'
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { z } from 'zod'
+import OAuthProvider, { OAuthHelpers } from '@cloudflare/workers-oauth-provider'
+import { Hono } from 'hono'
 
 // Define our MCP agent with tools
 export class MyMCP extends McpAgent {
@@ -54,18 +56,59 @@ export class MyMCP extends McpAgent {
   }
 }
 
+export type Bindings = Env & {
+  OAUTH_PROVIDER: OAuthHelpers
+}
+
+const app = new Hono<{
+  Bindings: Bindings
+}>()
+
+app.get('/authorize', async (c) => {
+  const oauthReqInfo = await c.env.OAUTH_PROVIDER.parseAuthRequest(c.req.raw)
+  const email = 'example@dotcom.com'
+  const { redirectTo } = await c.env.OAUTH_PROVIDER.completeAuthorization({
+    request: oauthReqInfo,
+    userId: email,
+    metadata: {
+      label: 'Test User',
+    },
+    scope: oauthReqInfo.scope,
+    props: {
+      userEmail: email,
+    },
+  })
+  return Response.redirect(redirectTo)
+})
+
 export default {
   fetch(request: Request, env: Env, ctx: ExecutionContext) {
     const url = new URL(request.url)
 
-    if (url.pathname === '/sse' || url.pathname === '/sse/message') {
-      return MyMCP.serveSSE('/sse').fetch(request, env, ctx)
+    if (url.pathname === '/public/sse' || url.pathname === '/public/sse/message') {
+      return MyMCP.serveSSE('/public/sse').fetch(request, env, ctx)
     }
 
-    if (url.pathname === '/mcp') {
-      return MyMCP.serve('/mcp').fetch(request, env, ctx)
+    if (url.pathname === '/public/mcp') {
+      return MyMCP.serve('/public/mcp').fetch(request, env, ctx)
     }
 
-    return new Response('Not found', { status: 404 })
+    return new OAuthProvider({
+      apiRoute: ['/sse', '/mcp'],
+      apiHandler: {
+        // @ts-ignore
+        fetch: (request, env, ctx) => {
+          const { pathname } = new URL(request.url)
+          if (pathname.startsWith('/sse')) return MyMCP.serveSSE('/sse').fetch(request as any, env, ctx)
+          if (pathname === '/mcp') return MyMCP.serve('/mcp').fetch(request as any, env, ctx)
+          return new Response('Not found', { status: 404 })
+        },
+      },
+      // @ts-ignore
+      defaultHandler: app,
+      authorizeEndpoint: '/authorize',
+      tokenEndpoint: '/token',
+      clientRegistrationEndpoint: '/register',
+    }).fetch(request, env, ctx)
   },
 }
