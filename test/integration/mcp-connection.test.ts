@@ -33,13 +33,22 @@ function getMCPServers() {
         url: `http://localhost:${state.cfAgentsPort}/mcp`,
         expectedTools: 1, // Minimum expected tools count
       },
+      {
+        name: 'cf-agents-sse',
+        url: `http://localhost:${state.cfAgentsPort}/sse`,
+        expectedTools: 1, // Minimum expected tools count
+      },
     ]
   } catch (error) {
     throw new Error(`Test environment not properly initialized: ${error}`)
   }
 }
 
-async function connectToMCPServer(page: Page, serverUrl: string): Promise<{ success: boolean; tools: string[]; debugLog: string }> {
+async function connectToMCPServer(
+  page: Page,
+  serverUrl: string,
+  transportType: 'auto' | 'http' | 'sse' = 'auto',
+): Promise<{ success: boolean; tools: string[]; debugLog: string }> {
   // Navigate to the inspector
   const stateData = readFileSync(testStateFile, 'utf-8')
   const state = JSON.parse(stateData)
@@ -57,6 +66,10 @@ async function connectToMCPServer(page: Page, serverUrl: string): Promise<{ succ
   // Enter the server URL
   const urlInput = page.locator('input[placeholder="Enter MCP server URL"]')
   await urlInput.fill(serverUrl)
+
+  // Set transport type
+  const transportSelect = page.locator('select')
+  await transportSelect.selectOption(transportType)
 
   // Click connect button
   const connectButton = page.locator('button:has-text("Connect")')
@@ -202,13 +215,35 @@ describe('MCP Connection Integration Tests', () => {
     }
   })
 
-  test('should connect to all MCP servers and retrieve tools', async () => {
-    const servers = getMCPServers()
+  const testScenarios = [
+    // Working examples with auto transport (should pass)
+    { serverName: 'hono-mcp', transportType: 'auto' as const },
+    { serverName: 'cf-agents', transportType: 'auto' as const },
 
-    for (const server of servers) {
-      console.log(`\n🔗 Testing connection to ${server.name} at ${server.url}`)
+    // SSE endpoint with SSE transport (should pass)
+    { serverName: 'cf-agents-sse', transportType: 'sse' as const },
 
-      const result = await connectToMCPServer(page, server.url)
+    // Additional test cases for HTTP transport
+    { serverName: 'hono-mcp', transportType: 'http' as const },
+    { serverName: 'cf-agents', transportType: 'http' as const },
+
+    // Failing case: SSE endpoint with auto transport (should fail)
+    { serverName: 'cf-agents-sse', transportType: 'auto' as const },
+  ]
+
+  test.each(testScenarios)(
+    'should connect to $serverName with $transportType transport (expect: $shouldPass)',
+    async ({ serverName, transportType }) => {
+      const servers = getMCPServers()
+      const server = servers.find((s) => s.name === serverName)
+
+      if (!server) {
+        throw new Error(`Server ${serverName} not found. Available servers: ${servers.map((s) => s.name).join(', ')}`)
+      }
+
+      console.log(`\n🔗 Testing connection to ${server.name} at ${server.url} with ${transportType} transport`)
+
+      const result = await connectToMCPServer(page, server.url, transportType)
 
       if (result.success) {
         console.log(`✅ Successfully connected to ${server.name}`)
@@ -228,8 +263,9 @@ describe('MCP Connection Integration Tests', () => {
         }
 
         // Fail the test with detailed information
-        throw new Error(`Failed to connect to ${server.name}. Debug log: ${result.debugLog}`)
+        throw new Error(`Expected to connect to ${server.name} with ${transportType} transport but failed. Debug log: ${result.debugLog}`)
       }
-    }
-  }, 45000)
+    },
+    45000,
+  )
 })
