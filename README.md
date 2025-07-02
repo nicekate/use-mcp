@@ -36,7 +36,7 @@ import { useMcp } from 'use-mcp/react'
 
 function MyAIComponent() {
   const {
-    state,          // Connection state: 'discovering' | 'authenticating' | 'connecting' | 'loading' | 'ready' | 'failed'
+    state,          // Connection state: 'discovering' | 'pending_auth' | 'authenticating' | 'connecting' | 'loading' | 'ready' | 'failed'
     tools,          // Available tools from MCP server
     error,          // Error message if connection failed
     callTool,       // Function to call tools on the MCP server
@@ -168,12 +168,13 @@ function useMcp(options: UseMcpOptions): UseMcpResult
 | `autoRetry` | `boolean \| number` | Auto retry connection if initial connection fails, with delay in ms |
 | `autoReconnect` | `boolean \| number` | Auto reconnect if an established connection is lost, with delay in ms (default: 3000) |
 | `transportType` | `'auto' \| 'http' \| 'sse'` | Transport type preference: 'auto' (HTTP with SSE fallback), 'http' (HTTP only), 'sse' (SSE only) (default: 'auto') |
+| `preventAutoAuth` | `boolean` | Prevent automatic authentication popup on initial connection (default: false) |
 
 #### Return Value
 
 | Property | Type | Description |
 |----------|------|-------------|
-| `state` | `string` | Current connection state: 'discovering', 'authenticating', 'connecting', 'loading', 'ready', 'failed' |
+| `state` | `string` | Current connection state: 'discovering', 'pending_auth', 'authenticating', 'connecting', 'loading', 'ready', 'failed' |
 | `tools` | `Tool[]` | Available tools from the MCP server |
 | `error` | `string \| undefined` | Error message if connection failed |
 | `authUrl` | `string \| undefined` | Manual authentication URL if popup is blocked |
