@@ -31,11 +31,11 @@
     "postinstall": "ln -sf ../../scripts/pre-commit .git/hooks/pre-commit"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.13.3",
     "strict-url-sanitise": "^0.0.1"
   },
   "devDependencies": {
     "@axodotdev/oranda": "^0.6.5",
-    "@modelcontextprotocol/sdk": "^1.13.3",
     "@types/react": "^19.0.12",
     "prettier": "^3.5.3",
     "react": "^19.0.0",
