@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest'
-import { chromium, Browser, Page } from 'playwright'
+import { chromium, type Browser, type Page } from 'playwright'
 import { SERVER_CONFIGS } from './server-configs.js'
 import { getTestState, connectToMCPServer, cleanupProcess } from './test-utils.js'
 
@@ -82,9 +82,33 @@ describe('MCP Connection Integration Tests', () => {
                 console.log(`   ${index + 1}. ${tool}`)
               })
 
+              if (result.resources.length > 0) {
+                console.log(`📂 Available resources (${result.resources.length}):`)
+                result.resources.forEach((resource, index) => {
+                  console.log(`   ${index + 1}. ${resource}`)
+                })
+              }
+
+              if (result.prompts.length > 0) {
+                console.log(`💬 Available prompts (${result.prompts.length}):`)
+                result.prompts.forEach((prompt, index) => {
+                  console.log(`   ${index + 1}. ${prompt}`)
+                })
+              }
+
               // Verify connection success
               expect(result.success).toBe(true)
               expect(result.tools.length).toBeGreaterThanOrEqual(serverConfig.expectedTools)
+
+              // Verify resources if expected
+              if (serverConfig.expectedResources !== undefined) {
+                expect(result.resources.length).toBeGreaterThanOrEqual(serverConfig.expectedResources)
+              }
+
+              // Verify prompts if expected
+              if (serverConfig.expectedPrompts !== undefined) {
+                expect(result.prompts.length).toBeGreaterThanOrEqual(serverConfig.expectedPrompts)
+              }
             } else {
               console.log(`❌ Failed to connect to ${serverConfig.name}`)
               if (result.debugLog) {

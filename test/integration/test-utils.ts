@@ -1,8 +1,8 @@
-import { spawn, ChildProcess } from 'child_process'
-import { Page } from 'playwright'
-import { readFileSync } from 'fs'
-import { join, dirname } from 'path'
-import { fileURLToPath } from 'url'
+import { spawn, type ChildProcess } from 'node:child_process'
+import type { Page } from 'playwright'
+import { readFileSync } from 'node:fs'
+import { join, dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const testDir = join(__dirname, '..')
@@ -25,6 +25,8 @@ export interface ServerConfig {
   portKey: keyof TestState
   endpoints: ServerEndpoint[]
   expectedTools: number
+  expectedResources?: number
+  expectedPrompts?: number
 }
 
 /**
@@ -132,7 +134,7 @@ export async function connectToMCPServer(
   page: Page,
   serverUrl: string,
   transportType: 'auto' | 'http' | 'sse' = 'auto',
-): Promise<{ success: boolean; tools: string[]; debugLog: string }> {
+): Promise<{ success: boolean; tools: string[]; resources: string[]; prompts: string[]; debugLog: string }> {
   const state = getTestState()
 
   if (!state.staticPort) {
@@ -197,7 +199,9 @@ export async function connectToMCPServer(
   // Extract available tools
   const tools: string[] = []
   try {
-    const toolCards = page.locator('.bg-white.rounded.border')
+    // Look for the Available Tools section
+    const toolsSection = page.locator('h3:has-text("Available Tools")').locator('..')
+    const toolCards = toolsSection.locator('.bg-white.rounded.border')
     const toolCount = await toolCards.count()
 
     for (let i = 0; i < toolCount; i++) {
@@ -209,6 +213,44 @@ export async function connectToMCPServer(
     }
   } catch (e) {
     console.warn('Could not extract tools list:', e)
+  }
+
+  // Extract available resources
+  const resources: string[] = []
+  try {
+    // Look for the Available Resources section
+    const resourcesSection = page.locator('h3:has-text("Available Resources")').locator('..')
+    const resourceCards = resourcesSection.locator('.bg-white.rounded.border')
+    const resourceCount = await resourceCards.count()
+
+    for (let i = 0; i < resourceCount; i++) {
+      const resourceNameElement = resourceCards.nth(i).locator('h4.font-medium.text-sm')
+      const resourceName = await resourceNameElement.textContent()
+      if (resourceName?.trim()) {
+        resources.push(resourceName.trim())
+      }
+    }
+  } catch (e) {
+    console.warn('Could not extract resources list:', e)
+  }
+
+  // Extract available prompts
+  const prompts: string[] = []
+  try {
+    // Look for the Available Prompts section
+    const promptsSection = page.locator('h3:has-text("Available Prompts")').locator('..')
+    const promptCards = promptsSection.locator('.bg-white.rounded.border')
+    const promptCount = await promptCards.count()
+
+    for (let i = 0; i < promptCount; i++) {
+      const promptNameElement = promptCards.nth(i).locator('h4.font-medium.text-sm')
+      const promptName = await promptNameElement.textContent()
+      if (promptName?.trim()) {
+        prompts.push(promptName.trim())
+      }
+    }
+  } catch (e) {
+    console.warn('Could not extract prompts list:', e)
   }
 
   // Extract debug log
@@ -225,6 +267,8 @@ export async function connectToMCPServer(
   return {
     success: isConnected,
     tools,
+    resources,
+    prompts,
     debugLog,
   }
 }
