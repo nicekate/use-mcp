@@ -124,14 +124,13 @@ mcpServer.registerResource(
     mimeType: 'text/markdown',
   },
   () => ({
-
-      contents: [
-        {
-          uri: 'docs://party-manual.md',
-          mimeType: 'text/markdown',
-          text: "# 🚌 Vengabus MCP Server\n\nBOOM BOOM BOOM BOOM! Welcome aboard the Vengabus! We like to party!\n\n## Features\n- 🎉 Party capacity calculator - How many can we take to Ibiza?\n- 🕐 Vengabus schedule checker - Next stop: The Magic Island!\n- 🎵 Fleet configuration with maximum bass boost\n- 🌟 Party statistics tracker (BPM, passengers, energy levels)\n\n## Routes\n- New York to Ibiza (via San Francisco)\n- Back to the Magic Island\n- Like an Intercity Disco\n- The place to be\n\n## Current Status\nThe wheels of steel are turning, and traffic lights are burning!\nWe're going to Ibiza! Woah! We're going to Ibiza!\n\n*Up, up and away we go!*",
-        }
-      ]
+    contents: [
+      {
+        uri: 'docs://party-manual.md',
+        mimeType: 'text/markdown',
+        text: "# 🚌 Vengabus MCP Server\n\nBOOM BOOM BOOM BOOM! Welcome aboard the Vengabus! We like to party!\n\n## Features\n- 🎉 Party capacity calculator - How many can we take to Ibiza?\n- 🕐 Vengabus schedule checker - Next stop: The Magic Island!\n- 🎵 Fleet configuration with maximum bass boost\n- 🌟 Party statistics tracker (BPM, passengers, energy levels)\n\n## Routes\n- New York to Ibiza (via San Francisco)\n- Back to the Magic Island\n- Like an Intercity Disco\n- The place to be\n\n## Current Status\nThe wheels of steel are turning, and traffic lights are burning!\nWe're going to Ibiza! Woah! We're going to Ibiza!\n\n*Up, up and away we go!*",
+      },
+    ],
   }),
 )
 
