@@ -21,7 +21,10 @@
     }
   },
   "scripts": {
-    "dev": "tsup --watch",
+    "install:all": "concurrently 'pnpm install' 'cd examples/chat-ui && pnpm install' 'cd examples/inspector && pnpm install' 'cd examples/servers/hono-mcp && pnpm install' 'cd examples/servers/cf-agents && pnpm install'",
+    "dev": "concurrently 'pnpm:build:watch' 'cd examples/chat-ui && pnpm dev' 'cd examples/inspector && pnpm dev' 'sleep 1 && cd examples/servers/hono-mcp && pnpm dev' 'sleep 2 && cd examples/servers/cf-agents && pnpm dev'",
+    "deploy:all": "concurrently 'pnpm build:site && pnpm deploy:site' 'cd examples/chat-ui && pnpm run deploy' 'cd examples/inspector && pnpm run deploy'",
+    "build:watch": "tsup --watch",
     "build": "tsup",
     "check": "prettier --check . && tsc",
     "prettier:fix": "prettier --write .",
@@ -37,6 +40,7 @@
   "devDependencies": {
     "@axodotdev/oranda": "^0.6.5",
     "@types/react": "^19.0.12",
+    "concurrently": "^9.2.0",
     "husky": "^9.1.7",
     "prettier": "^3.5.3",
     "react": "^19.0.0",

@@ -105,7 +105,7 @@ export function findAvailablePortFromBase(basePort: number): Promise<number> {
  * Spawn a server process in development mode
  */
 export function spawnDevServer(serverName: string, directory: string, port: number, onOutput?: (data: string) => void): ChildProcess {
-  const server = spawn('pnpm', ['dev', `--port=${port}`], {
+  const server = spawn('pnpm', ['wrangler', 'dev', `--port=${port}`], {
     cwd: directory,
     stdio: ['ignore', 'pipe', 'pipe'],
     shell: true,

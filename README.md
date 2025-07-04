@@ -8,7 +8,7 @@
 
 A lightweight React hook for connecting to [Model Context Protocol (MCP)](https://github.com/modelcontextprotocol) servers. Simplifies authentication and tool calling for AI systems implementing the MCP standard.
 
-Try it out: [MCP Inspector](https://inspector.use-mcp.dev) | [Cloudflare Workers AI Playground](https://playground.ai.cloudflare.com/)
+Try it out: [Chat Demo](https://chat.use-mcp.dev) | [MCP Inspector](https://inspector.use-mcp.dev) | [Cloudflare Workers AI Playground](https://playground.ai.cloudflare.com/)
 
 ## Installation
 
@@ -18,6 +18,31 @@ npm install use-mcp
 pnpm add use-mcp
 # or
 yarn add use-mcp
+```
+
+## Development
+
+To run the development environment with all examples and servers:
+
+```bash
+pnpm dev
+```
+
+This starts:
+- **Inspector**: http://localhost:5001 - MCP server debugging tool
+- **Chat UI**: http://localhost:5002 - Example chat interface
+- **Hono MCP Server**: http://localhost:5101 - Example MCP server
+- **CF Agents MCP Server**: http://localhost:5102 - Cloudflare Workers AI MCP server
+
+### Testing
+
+Integration tests are located in the `test/` directory and run headlessly by default:
+
+```bash
+cd test && pnpm test              # Run tests headlessly (default)
+cd test && pnpm test:headed       # Run tests with visible browser
+cd test && pnpm test:watch        # Run tests in watch mode
+cd test && pnpm test:ui           # Run tests with interactive UI
 ```
 
 ## Features
